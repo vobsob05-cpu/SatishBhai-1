@@ -1,1 +1,17 @@
+# --- Requirement Text for Ultimate Bomber System ---
+# This file lists all Python libraries required to run the script.
+# For maximum power and to utilize the suggested SMS/OTP component:
+
+# 1. For Telegram Reporting (Essential for the Bot API feature)
 python-telegram-bot
+
+# 2. For SMS/OTP Gateway Implementation (High Power, requires API setup)
+twilio 
+
+# 3. Optional: If you replace simulations with Browser Automation for WhatsApp
+# selenium
+# webdriver-manager
+
+# --- Installation Command ---
+# Run this in your terminal:
+# pip install -r requirement.txt
