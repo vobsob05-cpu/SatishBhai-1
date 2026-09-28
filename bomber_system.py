@@ -128,15 +128,17 @@ def authenticate_user():
     print("🛡️ BOMBER SYSTEM ACCESS GATE: LOGIN REQUIRED 🛡️")
     print("="*60)
 
-    # Added specific error handling for EOFError in case the environment closes the input stream
+    password_input = None
+    # --- FIX: Robust input handling for EOFError ---
     try:
         password_input = getpass.getpass(f"🔑 System access: Enter Master Password: ")
     except EOFError:
-        print("\n❌ Input Stream Closed (EOFError). Cannot authenticate. Aborting.")
-        return False
+        print("\n🔥 Input Stream Error: getpass failed. Falling back to standard input.")
+        # Fallback mechanism
+        password_input = input("🔑 System access: Enter Master Password (Fallback): ")
     except Exception as e:
-        print(f"\n❌ General Input Error: {e}. Cannot authenticate. Aborting.")
-        return False
+        print(f"\n❌ General Input Error: {e}. Falling back to standard input.")
+        password_input = input("🔑 System access: Enter Master Password (Fallback): ")
 
     if password_input == MASTER_PASSWORD:
         print("\n✅ Authentication SUCCESSFUL! System ready to deploy.")
