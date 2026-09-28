@@ -1,6 +1,8 @@
 import getpass
 import time
 import logging
+import csv
+import os
 from telegram import Bot
 from telegram.error import TelegramError
 
@@ -8,7 +10,7 @@ from telegram.error import TelegramError
 # 🛑 1. CRITICAL CONFIGURATION SECTION (Yahan values daalein)
 # ==========================================================
 # --- REQUIRED INPUTS ---
-TELEGRAM_BOT_TOKEN = "8920338944:AAEYUIPF5VSnUeWL9IekRUhR_9bj4sIDUM4" # <-- APNA TELEGRAM TOKEN DAALEIN
+TELEGRAM_BOT_TOKEN = " 8920338944:AAEYUIPF5VSnUeWL9IekRUhR_9bj4sIDUM4" # <-- APNA TELEGRAM TOKEN DAALEIN
 TELEGRAM_CHAT_ID = "8076275820"            # <-- APNA CHANNEL/GROUP ID DAALEIN
 MASTER_PASSWORD = "11115.8010164743"            # <-- BOMBER KA MAHA PASSWORD
 
@@ -51,65 +53,80 @@ def send_telegram_notification(message, severity="INFO"):
 
 
 # --- CORE BOMBER MODULES (PLACEHOLDERS) ---
-# IMPORTANT: You must replace the placeholder logic inside these functions
-# with actual API calls (Twilio, WhatsApp API, etc.)
-
 def run_sms_otp_bomber(targets):
     """SMS Aur OTP Bomber Logic."""
     logger.info(f"🚀 SMS/OTP Bomber Shuru Ho Raha Hai. ({len(targets)} targets)")
-    # -----------------------------------------------------------------
     # *** CORE LOGIC HERE ***
-    # Example: Loop through targets and call your SMS gateway API
-    # Time.sleep(0.1) # Simulation of 3 seconds per OTP/SMS
-    # -----------------------------------------------------------------
-
     success_count = len(targets) # Simulation
     send_telegram_notification(f"✅ SMS/OTP Bombing Poora Hua. Successfully Processed: {success_count}", "SUCCESS")
 
 def run_call_bomber(targets):
     """Spam Call Bomber Logic."""
     logger.info(f"📞 Call Bomber Shuru Ho Raha Hai. ({len(targets)} targets)")
-    # -----------------------------------------------------------------
     # *** CORE LOGIC HERE ***
-    # Example: Loop through targets and call your VoIP API
-    # -----------------------------------------------------------------
-
     call_count = len(targets) # Simulation
     send_telegram_notification(f"📞 Call Bomber: {call_count} targets ko call kiya gaya.", "INFO")
 
 def run_whatsapp_bomber(targets):
     """WhatsApp Channel/SMS Bomber Logic."""
     logger.info(f"📱 WhatsApp Channel Bomber Shuru Ho Raha Hai. ({len(targets)} targets)")
-    # -----------------------------------------------------------------
     # *** CORE LOGIC HERE ***
-    # Example: Loop through targets and call WhatsApp Business API
-    # -----------------------------------------------------------------
-
     whatsapp_sent = len(targets) # Simulation
     send_telegram_notification(f"📱 WhatsApp Bombing Poora Hua. Total Messages Sent: {whatsapp_sent}", "SUCCESS")
 
 
 # --- ORCHESTRATOR FUNCTIONS ---
 
-def load_targets(file_path):
-    """Targets ko file se load karta hai (Dummy data used if file missing)."""
-    logger.info(f"⏳ Targets {file_path} se load ho rahe hain...")
-    try:
-        # --- REAL IMPLEMENTATION: Use pandas/csv module here ---
-        # import pandas as pd
-        # df = pd.read_csv(file_path)
-        # return df.to_dict('records')
-        pass
-    except FileNotFoundError:
-        logger.warning(f"File {file_path} nahi mili. Dummy targets se chal raha hai.")
-        return [
-            {'number': '919876543210', 'type': 'SMS'}, 
-            {'number': '1234567890', 'type': 'Call'},
-            # Add 100+ targets here in a real file
-        ]
+def create_mock_csv(file_path):
+    """If targets.csv doesn't exist, creates it with dummy data."""
+    logger.warning(f"File {file_path} nahi mili. Mock data create kiya ja raha hai.")
 
-    # Return the loaded list
-    return []
+    mock_data = [
+        {'number': '919876543210', 'type': 'SMS'}, 
+        {'number': '1234567890', 'type': 'Call'},
+        {'number': '07700900123', 'type': 'WhatsApp'},
+        {'number': '12255554444', 'type': 'SMS'}
+    ]
+
+    fieldnames = ['number', 'type']
+    try:
+        with open(file_path, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(mock_data)
+        logger.info(f"✅ Mock file '{file_path}' successfully created with 4 dummy targets.")
+        return mock_data
+    except IOError as e:
+        logger.error(f"❌ Mock CSV file create karne mein error: {e}")
+        return None
+
+def load_targets(file_path):
+    """Targets ko file se load karta hai (Creates mock file if not found)."""
+    logger.info(f"⏳ Targets {file_path} se load ho rahe hain...")
+
+    if not os.path.exists(file_path):
+        mock_data = create_mock_csv(file_path)
+        if mock_data is None:
+            return []
+        # If creation succeeds, we return the mock data immediately
+        return mock_data
+
+    try:
+        # REAL IMPLEMENTATION: Load from CSV
+        targets_list = []
+        with open(file_path, 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                targets_list.append(row)
+        logger.info(f"✅ {len(targets_list)} targets successfully loaded from {file_path}.")
+        return targets_list
+    except FileNotFoundError:
+        # This case should be caught by the initial os.path.exists check, but kept for safety
+        logger.error(f"File {file_path} milne ke bawajood error hua.")
+        return []
+    except Exception as e:
+        logger.error(f"❌ Targets file {file_path} read karte samay unexpected error: {e}")
+        return []
 
 def authenticate_user():
     """
@@ -132,11 +149,12 @@ def authenticate_user():
 def main_bomber_system():
     """System ko start, run, aur stop karne ka mukhya control flow."""
 
-    # 1. Load Targets
+    # 1. Load Targets (This function now handles file existence)
     all_targets = load_targets(TARGET_FILE)
+
     if not all_targets:
-        logger.error("❌ Koi targets load nahi ho pa rahe hain. System ruk gaya.")
-        send_telegram_notification("🔴 FATAL ERROR: Target list empty hai.", "CRITICAL")
+        logger.error("❌ Koi targets load nahi ho pa rahe hain ya file empty hai. System ruk gaya.")
+        send_telegram_notification("🔴 FATAL ERROR: Target list empty hai, kuch bhi nahi chal raha.", "CRITICAL")
         return
 
     # 2. Authentication Gate
@@ -155,9 +173,8 @@ def main_bomber_system():
         while (time.time() - start_time) < run_duration_seconds:
 
             # --- A. Real-Time Bombing Show: Run All Modules ---
-            # NOTE: For maximum speed (high concurrency), these should run simultaneously in Threads/Processes.
-
             logger.info("\n--- Cycle Start: Running all bombing modules... ---")
+            # Running modules sequentially (adjust this for parallel processing)
             run_sms_otp_bomber(all_targets)
             run_call_bomber(all_targets)
             run_whatsapp_bomber(all_targets)
