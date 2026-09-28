@@ -1,0 +1,3 @@
+# Safe test-mode dependencies
+# No third-party package is required.
+# Python 3.9+ recommended.
