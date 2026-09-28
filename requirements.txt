@@ -1,0 +1,3 @@
+python-telegram-bot
+# If you implement real CSV reading instead of dummies, you might also need:
+# pandas
